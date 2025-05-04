@@ -1,57 +1,64 @@
-let [hours, minutes, seconds] = [0, 0, 0];
-let timer = null;
+const board = document.getElementById('game-board');
+const status = document.getElementById('status');
+const resetButton = document.getElementById('reset-button');
 
-const display = document.getElementById('display');
-const startBtn = document.getElementById('start');
-const pauseBtn = document.getElementById('pause');
-const resetBtn = document.getElementById('reset');
-const lapBtn = document.getElementById('lap');
-const laps = document.getElementById('laps');
+let cells = Array(9).fill(null);
+let currentPlayer = 'X';
+let gameOver = false;
 
-function updateDisplay() {
-  let h = hours < 10 ? '0' + hours : hours;
-  let m = minutes < 10 ? '0' + minutes : minutes;
-  let s = seconds < 10 ? '0' + seconds : seconds;
-  display.innerText = `${h}:${m}:${s}`;
+function renderBoard() {
+  board.innerHTML = '';
+  cells.forEach((cell, index) => {
+    const cellElement = document.createElement('div');
+    cellElement.classList.add('cell');
+    cellElement.textContent = cell || '';
+    cellElement.addEventListener('click', () => handleCellClick(index));
+    board.appendChild(cellElement);
+  });
 }
 
-function startTimer() {
-  if (timer !== null) return;
+function handleCellClick(index) {
+  if (cells[index] || gameOver) return;
 
-  timer = setInterval(() => {
-    seconds++;
-    if (seconds === 60) {
-      seconds = 0;
-      minutes++;
-      if (minutes === 60) {
-        minutes = 0;
-        hours++;
-      }
-    }
-    updateDisplay();
-  }, 1000);
+  cells[index] = currentPlayer;
+  if (checkWinner()) {
+    status.textContent = `${currentPlayer} wins!`;
+    gameOver = true;
+    return;
+  }
+
+  if (cells.every(cell => cell)) {
+    status.textContent = "It's a draw!";
+    gameOver = true;
+    return;
+  }
+
+  currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+  status.textContent = `${currentPlayer}'s turn`;
+  renderBoard();
 }
 
-function pauseTimer() {
-  clearInterval(timer);
-  timer = null;
+function checkWinner() {
+  const winningCombos = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+    [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
+    [0, 4, 8], [2, 4, 6]             // diagonals
+  ];
+
+  return winningCombos.some(combo => {
+    const [a, b, c] = combo;
+    return cells[a] && cells[a] === cells[b] && cells[a] === cells[c];
+  });
 }
 
-function resetTimer() {
-  pauseTimer();
-  [hours, minutes, seconds] = [0, 0, 0];
-  updateDisplay();
-  laps.innerHTML = '';
-}
+resetButton.addEventListener('click', () => {
+  cells = Array(9).fill(null);
+  currentPlayer = 'X';
+  gameOver = false;
+  status.textContent = "X's turn";
+  renderBoard();
+});
 
-function addLap() {
-  let lapTime = display.innerText;
-  const li = document.createElement('li');
-  li.textContent = `Lap: ${lapTime}`;
-  laps.appendChild(li);
-}
-
-startBtn.onclick = startTimer;
-pauseBtn.onclick = pauseTimer;
-resetBtn.onclick = resetTimer;
-lapBtn.onclick = addLap;
+// Initialize game
+status.textContent = "X's turn";
+renderBoard();
